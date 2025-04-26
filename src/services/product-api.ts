@@ -19,7 +19,7 @@ export interface Product {
   price: number;
   imageUrl: string;
   gallery: string[]; // URLs for additional images
-  category: 'Laptops' | 'Smartphones' | 'Audio' | 'Accessories' | 'Cameras';
+  category: 'Laptops' | 'Smartphones' | 'Audio' | 'Accessories' | 'Cameras' | 'Tablets' | 'Gaming' | 'Monitors';
   brand: string;
   stock: number; // Number of items in stock
   technicalSpecifications: Record<string, string>;
@@ -28,16 +28,17 @@ export interface Product {
 
 
 const mockProducts: Product[] = [
+  // Existing Products (Updated Images)
   {
     id: 'laptop-001',
     name: 'UltraBook Pro 14',
     description: 'High-performance laptop for professionals and creatives. Sleek design, powerful internals.',
     price: 1499.99,
-    imageUrl: 'https://picsum.photos/seed/laptop1/600/400',
+    imageUrl: 'https://picsum.photos/seed/ultrabookpro14/600/400',
     gallery: [
-      'https://picsum.photos/seed/laptop1a/800/600',
-      'https://picsum.photos/seed/laptop1b/800/600',
-      'https://picsum.photos/seed/laptop1c/800/600',
+      'https://picsum.photos/seed/ultrabookpro14a/800/600',
+      'https://picsum.photos/seed/ultrabookpro14b/800/600',
+      'https://picsum.photos/seed/ultrabookpro14c/800/600',
     ],
     category: 'Laptops',
     brand: 'Innovatech',
@@ -62,10 +63,10 @@ const mockProducts: Product[] = [
     name: 'Galaxy S25 Ultra',
     description: 'The latest flagship smartphone with an amazing camera system and AI features.',
     price: 1199.00,
-    imageUrl: 'https://picsum.photos/seed/phone1/600/400',
+    imageUrl: 'https://picsum.photos/seed/galaxys25ultra/600/400',
      gallery: [
-      'https://picsum.photos/seed/phone1a/800/600',
-      'https://picsum.photos/seed/phone1b/800/600',
+      'https://picsum.photos/seed/galaxys25ultra_a/800/600',
+      'https://picsum.photos/seed/galaxys25ultra_b/800/600',
     ],
     category: 'Smartphones',
     brand: 'Samsonic',
@@ -88,9 +89,9 @@ const mockProducts: Product[] = [
     name: 'QuietComfort Ultra Headphones',
     description: 'Industry-leading noise cancellation and immersive audio experience.',
     price: 349.00,
-    imageUrl: 'https://picsum.photos/seed/headphones1/600/400',
+    imageUrl: 'https://picsum.photos/seed/quietcomfortultra/600/400',
      gallery: [
-      'https://picsum.photos/seed/headphones1a/800/600',
+      'https://picsum.photos/seed/quietcomfortultra_a/800/600',
     ],
     category: 'Audio',
     brand: 'SoundWave',
@@ -113,9 +114,9 @@ const mockProducts: Product[] = [
     name: 'Wireless Ergonomic Mouse',
     description: 'Comfortable and precise wireless mouse designed for long hours of use.',
     price: 79.99,
-    imageUrl: 'https://picsum.photos/seed/mouse1/600/400',
+    imageUrl: 'https://picsum.photos/seed/ergomouse/600/400',
      gallery: [
-      'https://picsum.photos/seed/mouse1a/800/600',
+      'https://picsum.photos/seed/ergomouse_a/800/600',
     ],
     category: 'Accessories',
     brand: 'ClickMaster',
@@ -136,11 +137,11 @@ const mockProducts: Product[] = [
     name: 'Alpha Mirrorless A7 IV',
     description: 'Full-frame mirrorless camera for hybrid shooters, excelling in both photo and video.',
     price: 2499.00,
-    imageUrl: 'https://picsum.photos/seed/camera1/600/400',
+    imageUrl: 'https://picsum.photos/seed/alphaa7iv/600/400',
     gallery: [
-      'https://picsum.photos/seed/camera1a/800/600',
-      'https://picsum.photos/seed/camera1b/800/600',
-      'https://picsum.photos/seed/camera1c/800/600',
+      'https://picsum.photos/seed/alphaa7iv_a/800/600',
+      'https://picsum.photos/seed/alphaa7iv_b/800/600',
+      'https://picsum.photos/seed/alphaa7iv_c/800/600',
     ],
     category: 'Cameras',
     brand: 'Sorny',
@@ -163,10 +164,10 @@ const mockProducts: Product[] = [
     name: 'GamerForce X17',
     description: 'Ultimate gaming laptop with top-tier graphics and high refresh rate display.',
     price: 2199.00,
-    imageUrl: 'https://picsum.photos/seed/laptop2/600/400',
+    imageUrl: 'https://picsum.photos/seed/gamerforcex17/600/400',
     gallery: [
-       'https://picsum.photos/seed/laptop2a/800/600',
-       'https://picsum.photos/seed/laptop2b/800/600',
+       'https://picsum.photos/seed/gamerforcex17_a/800/600',
+       'https://picsum.photos/seed/gamerforcex17_b/800/600',
     ],
     category: 'Laptops',
     brand: 'Republic of Gamers',
@@ -190,9 +191,9 @@ const mockProducts: Product[] = [
     name: 'Pixel 9a',
     description: 'Affordable smartphone with Google\'s excellent camera software and clean Android experience.',
     price: 499.00,
-    imageUrl: 'https://picsum.photos/seed/phone2/600/400',
+    imageUrl: 'https://picsum.photos/seed/pixel9a/600/400',
     gallery: [
-      'https://picsum.photos/seed/phone2a/800/600',
+      'https://picsum.photos/seed/pixel9a_a/800/600',
     ],
     category: 'Smartphones',
     brand: 'Googol',
@@ -216,10 +217,10 @@ const mockProducts: Product[] = [
     name: 'SoundCore Liberty 4 NC',
     description: 'True wireless earbuds with strong noise cancellation and long battery life.',
     price: 99.99,
-    imageUrl: 'https://picsum.photos/seed/earbuds1/600/400',
+    imageUrl: 'https://picsum.photos/seed/liberty4nc/600/400',
      gallery: [
-      'https://picsum.photos/seed/earbuds1a/800/600',
-      'https://picsum.photos/seed/earbuds1b/800/600',
+      'https://picsum.photos/seed/liberty4nc_a/800/600',
+      'https://picsum.photos/seed/liberty4nc_b/800/600',
     ],
     category: 'Audio',
     brand: 'Anker Soundcore',
@@ -237,6 +238,182 @@ const mockProducts: Product[] = [
       { id: 'r8-2', author: 'Melinda May', rating: 4, comment: 'Fit is good, sound is great. ANC is impressive for the price.', date: '2024-05-11T09:30:00Z' },
     ],
   },
+  // New Products
+  {
+    id: 'tablet-001',
+    name: 'Surface Pro 10',
+    description: 'Versatile 2-in-1 tablet/laptop with a stunning display and powerful performance.',
+    price: 1099.99,
+    imageUrl: 'https://picsum.photos/seed/surfacepro10/600/400',
+    gallery: [
+      'https://picsum.photos/seed/surfacepro10_a/800/600',
+      'https://picsum.photos/seed/surfacepro10_b/800/600',
+    ],
+    category: 'Tablets',
+    brand: 'Macrosoft',
+    stock: 75,
+    technicalSpecifications: {
+      'Display': '13-inch PixelSense Flow Display',
+      'Processor': 'Intel Core Ultra 7',
+      'RAM': '16GB LPDDR5x',
+      'Storage': '512GB SSD',
+      'OS': 'Windows 11 Home',
+      'Features': 'Detachable Keyboard (sold separately), Surface Pen support',
+    },
+    reviews: [
+      { id: 'r9-1', author: 'Nick Fury', rating: 4, comment: 'Great for productivity on the go. Keyboard is a must-have.', date: '2024-05-25T10:00:00Z' },
+    ],
+  },
+  {
+    id: 'gaming-001',
+    name: 'PlayStation 6',
+    description: 'Next-generation gaming console with breathtaking graphics and lightning-fast load times.',
+    price: 599.00,
+    imageUrl: 'https://picsum.photos/seed/playstation6/600/400',
+    gallery: [
+      'https://picsum.photos/seed/playstation6_a/800/600',
+      'https://picsum.photos/seed/playstation6_b/800/600',
+    ],
+    category: 'Gaming',
+    brand: 'Sorny',
+    stock: 40,
+    technicalSpecifications: {
+      'CPU': 'Custom AMD Zen 4',
+      'GPU': 'Custom AMD RDNA 4',
+      'RAM': '24GB GDDR7',
+      'Storage': '2TB Custom NVMe SSD',
+      'Output': 'Up to 8K HDR',
+      'Features': 'DualSense Controller, Ray Tracing',
+    },
+    reviews: [
+      { id: 'r10-1', author: 'Oliver Queen', rating: 5, comment: 'Gaming has never looked this good. The controller feedback is insane.', date: '2024-05-28T14:30:00Z' },
+    ],
+  },
+  {
+    id: 'monitor-001',
+    name: 'UltraWide QHD Monitor 34"',
+    description: 'Immersive ultrawide monitor perfect for gaming and multitasking.',
+    price: 699.00,
+    imageUrl: 'https://picsum.photos/seed/ultrawide34/600/400',
+    gallery: [
+      'https://picsum.photos/seed/ultrawide34_a/800/600',
+    ],
+    category: 'Monitors',
+    brand: 'LG Electronics',
+    stock: 60,
+    technicalSpecifications: {
+      'Panel Type': 'IPS',
+      'Resolution': '3440 x 1440 (WQHD)',
+      'Refresh Rate': '144Hz',
+      'Response Time': '1ms (GtG)',
+      'Aspect Ratio': '21:9',
+      'Connectivity': 'HDMI 2.0 x2, DisplayPort 1.4 x1, USB-C',
+    },
+    reviews: [
+      { id: 'r11-1', author: 'Peter Parker', rating: 5, comment: 'Super smooth gameplay and tons of screen real estate for work.', date: '2024-05-19T11:00:00Z' },
+    ],
+  },
+   {
+    id: 'accessory-002',
+    name: 'Mechanical Keyboard TKL',
+    description: 'Tenkeyless mechanical keyboard with customizable switches and RGB lighting.',
+    price: 129.99,
+    imageUrl: 'https://picsum.photos/seed/keyboardtkl/600/400',
+    gallery: [
+        'https://picsum.photos/seed/keyboardtkl_a/800/600',
+        'https://picsum.photos/seed/keyboardtkl_b/800/600',
+    ],
+    category: 'Accessories',
+    brand: 'Keychron',
+    stock: 90,
+    technicalSpecifications: {
+        'Layout': 'Tenkeyless (87 keys)',
+        'Switch Type': 'Gateron Brown (Hot-swappable)',
+        'Connectivity': 'Wired (USB-C), Bluetooth 5.1',
+        'Backlight': 'RGB',
+        'Compatibility': 'Windows, macOS, Linux',
+    },
+    reviews: [
+        { id: 'r12-1', author: 'Quentin Beck', rating: 5, comment: 'Typing feels amazing. Love the customization options.', date: '2024-05-21T17:00:00Z' },
+    ],
+  },
+  {
+    id: 'audio-003',
+    name: 'Studio Speaker Set',
+    description: 'Pair of high-fidelity bookshelf speakers for accurate sound reproduction.',
+    price: 450.00,
+    imageUrl: 'https://picsum.photos/seed/studiospeakers/600/400',
+    gallery: [
+      'https://picsum.photos/seed/studiospeakers_a/800/600',
+    ],
+    category: 'Audio',
+    brand: 'Audiophile Acoustics',
+    stock: 45,
+    technicalSpecifications: {
+      'Type': '2-way Bookshelf Speakers',
+      'Woofer': '5.25" Kevlar Cone',
+      'Tweeter': '1" Silk Dome',
+      'Frequency Response': '55Hz - 22kHz',
+      'Impedance': '6 Ohms',
+      'Power Handling': '100W RMS',
+    },
+    reviews: [
+       { id: 'r13-1', author: 'Rachel Dawes', rating: 5, comment: 'Crystal clear sound. Perfect for my home studio setup.', date: '2024-05-29T09:15:00Z' },
+       { id: 'r13-2', author: 'Steve Rogers', rating: 4, comment: 'Excellent detail, requires a good amplifier.', date: '2024-05-30T11:00:00Z' },
+    ],
+  },
+    {
+    id: 'camera-002',
+    name: 'ActionCam Hero 12',
+    description: 'Rugged and waterproof action camera capturing smooth 5K video.',
+    price: 399.99,
+    imageUrl: 'https://picsum.photos/seed/actioncam12/600/400',
+    gallery: [
+        'https://picsum.photos/seed/actioncam12_a/800/600',
+        'https://picsum.photos/seed/actioncam12_b/800/600',
+    ],
+    category: 'Cameras',
+    brand: 'GoAction',
+    stock: 110,
+    technicalSpecifications: {
+        'Video Resolution': '5.3K60, 4K120, 2.7K240',
+        'Photo Resolution': '27MP',
+        'Waterproof': '10m (33ft) without housing',
+        'Stabilization': 'HyperSmooth 6.0',
+        'Screen': 'Front and Rear LCD Screens',
+        'Features': 'Horizon Lock, HDR Video',
+    },
+    reviews: [
+       { id: 'r14-1', author: 'Tony Stark', rating: 5, comment: 'Incredible stabilization, even in rough conditions. Very durable.', date: '2024-05-23T16:45:00Z' },
+    ],
+  },
+   {
+    id: 'laptop-003',
+    name: 'Feather Air M3',
+    description: 'Ultra-lightweight and thin laptop with exceptional battery life.',
+    price: 1299.00,
+    imageUrl: 'https://picsum.photos/seed/featherairm3/600/400',
+    gallery: [
+        'https://picsum.photos/seed/featherairm3_a/800/600',
+        'https://picsum.photos/seed/featherairm3_b/800/600',
+    ],
+    category: 'Laptops',
+    brand: 'Pear Computers',
+    stock: 65,
+    technicalSpecifications: {
+        'Processor': 'Pear M3 Chip',
+        'RAM': '8GB Unified Memory',
+        'Storage': '256GB SSD',
+        'Display': '13.6-inch Liquid Retina',
+        'OS': 'pearOS Sonoma',
+        'Weight': '1.24 kg',
+        'Battery Life': 'Up to 18 hours',
+    },
+    reviews: [
+        { id: 'r15-1', author: 'Ursula K. Le Guin', rating: 5, comment: 'Perfect for travel. The battery just keeps going!', date: '2024-05-27T10:20:00Z' },
+        { id: 'r15-2', author: 'Victor Stone', rating: 4, comment: 'Great build quality and performance for everyday tasks. Wish it had more ports.', date: '2024-05-29T18:00:00Z' },
+    ],
+  },
 ];
 
 /**
@@ -252,7 +429,7 @@ export async function getProducts(): Promise<Product[]> {
   // const response = await fetch('/api/products');
   // const data = await response.json();
   // return data;
-  console.log("getProducts returning data:", mockProducts); // Debug log
+  console.log("getProducts returning data:", mockProducts.length); // Debug log
   return [...mockProducts]; // Return a copy to prevent mutation
 }
 
@@ -271,6 +448,7 @@ export async function getProduct(id: string): Promise<Product | undefined> {
   // const data = await response.json();
   // return data;
   const product = mockProducts.find(product => product.id === id);
+   console.log(`getProduct(${id}) returning:`, product ? product.name : 'undefined'); // Debug log
   return product ? { ...product } : undefined; // Return a copy
 }
 
@@ -279,9 +457,12 @@ export async function getProduct(id: string): Promise<Product | undefined> {
  * @returns A promise that resolves to an array of unique category strings.
  */
 export async function getCategories(): Promise<string[]> {
-  const products = await getProducts();
-  const categories = new Set(products.map(p => p.category));
-  return Array.from(categories);
+   console.log("getCategories called"); // Debug log
+  // No need to fetch all products again if we have them
+  const categories = new Set(mockProducts.map(p => p.category));
+  const categoryArray = Array.from(categories);
+   console.log("getCategories returning:", categoryArray); // Debug log
+  return categoryArray;
 }
 
 /**
@@ -289,7 +470,10 @@ export async function getCategories(): Promise<string[]> {
  * @returns A promise that resolves to an array of unique brand strings.
  */
 export async function getBrands(): Promise<string[]> {
-  const products = await getProducts();
-  const brands = new Set(products.map(p => p.brand));
-  return Array.from(brands);
+   console.log("getBrands called"); // Debug log
+  // No need to fetch all products again if we have them
+  const brands = new Set(mockProducts.map(p => p.brand));
+   const brandArray = Array.from(brands);
+    console.log("getBrands returning:", brandArray); // Debug log
+  return brandArray;
 }
