@@ -15,7 +15,7 @@ import { useComparison } from '@/hooks/use-comparison';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card'; // Import CardHeader
 import { Skeleton } from '@/components/ui/skeleton';
 
 
