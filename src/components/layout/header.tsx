@@ -7,24 +7,40 @@ import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/hooks/use-cart';
 import { useComparison } from '@/hooks/use-comparison';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Import useEffect
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-const navLinks = [
+// Desktop nav links (excluding Cart and Compare, which are icons)
+const desktopNavLinks = [
   { href: '/', label: 'Home' },
   { href: '/products', label: 'Products' },
-  { href: '/compare', label: 'Compare' },
-  { href: '/cart', label: 'Cart' },
 ];
+
+// Mobile nav links (including Cart and Compare)
+const mobileNavLinks = [
+    { href: '/', label: 'Home' },
+    { href: '/products', label: 'Products' },
+    { href: '/compare', label: 'Compare' },
+    { href: '/cart', label: 'Cart' },
+];
+
 
 export default function Header() {
   const { cart } = useCart();
   const { comparisonList } = useComparison();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false); // <-- Add mounted state
   const pathname = usePathname();
 
-  const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  // Set mounted state after component mounts
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Calculate counts *after* mount or use 0 before mount to avoid hydration mismatch
+  const totalCartItems = isMounted ? cart.reduce((sum, item) => sum + item.quantity, 0) : 0;
+  const comparisonCount = isMounted ? comparisonList.length : 0;
 
   return (
     <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-50">
@@ -33,9 +49,9 @@ export default function Header() {
           Tech Emporium
         </Link>
 
-        {/* Desktop Navigation */}
+        {/* Desktop Navigation - Now uses desktopNavLinks */}
         <nav className="hidden md:flex items-center space-x-4">
-          {navLinks.map((link) => (
+          {desktopNavLinks.map((link) => (
             <Link key={link.href} href={link.href} passHref>
               <Button
                 variant="ghost"
@@ -50,14 +66,15 @@ export default function Header() {
            ))}
         </nav>
 
-        {/* Icons */}
+        {/* Icons - Remain unchanged */}
         <div className="hidden md:flex items-center space-x-4">
            <Link href="/compare" passHref>
             <Button variant="ghost" size="icon" className="relative hover:bg-primary/80">
               <GitCompareArrows className="h-5 w-5" />
-              {comparisonList.length > 0 && (
-                <Badge variant="secondary" className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs">
-                  {comparisonList.length}
+              {/* Only render badge content after mount */}
+              {isMounted && comparisonCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs">
+                  {comparisonCount}
                 </Badge>
               )}
               <span className="sr-only">Compare Products</span>
@@ -66,8 +83,9 @@ export default function Header() {
           <Link href="/cart" passHref>
             <Button variant="ghost" size="icon" className="relative hover:bg-primary/80">
               <ShoppingCart className="h-5 w-5" />
-              {totalCartItems > 0 && (
-                <Badge variant="secondary" className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs">
+               {/* Only render badge content after mount */}
+              {isMounted && totalCartItems > 0 && (
+                <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs">
                   {totalCartItems}
                 </Badge>
               )}
@@ -95,21 +113,24 @@ export default function Header() {
                    </Button>
                  </SheetClose>
               </div>
+               {/* Mobile Navigation - Uses mobileNavLinks */}
               <nav className="flex flex-col space-y-3">
-                {navLinks.map((link) => (
+                {mobileNavLinks.map((link) => (
                   <SheetClose key={link.href} asChild>
                     <Link href={link.href} passHref>
                       <Button
                         variant={pathname === link.href ? 'secondary': 'ghost'}
                         className="justify-start w-full"
                       >
-                         {link.label === 'Compare' && comparisonList.length > 0 && <GitCompareArrows className="mr-2 h-4 w-4" />}
-                         {link.label === 'Cart' && totalCartItems > 0 && <ShoppingCart className="mr-2 h-4 w-4" />}
+                         {link.label === 'Compare' && isMounted && comparisonCount > 0 && <GitCompareArrows className="mr-2 h-4 w-4" />}
+                         {link.label === 'Cart' && isMounted && totalCartItems > 0 && <ShoppingCart className="mr-2 h-4 w-4" />}
                          {link.label}
-                         {link.label === 'Compare' && comparisonList.length > 0 && (
-                            <Badge variant="outline" className="ml-auto">{comparisonList.length}</Badge>
+                         {/* Only render badge content after mount */}
+                         {link.label === 'Compare' && isMounted && comparisonCount > 0 && (
+                            <Badge variant="outline" className="ml-auto">{comparisonCount}</Badge>
                          )}
-                         {link.label === 'Cart' && totalCartItems > 0 && (
+                         {/* Only render badge content after mount */}
+                         {link.label === 'Cart' && isMounted && totalCartItems > 0 && (
                              <Badge variant="outline" className="ml-auto">{totalCartItems}</Badge>
                          )}
                       </Button>
