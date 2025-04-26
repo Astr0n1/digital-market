@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/hooks/use-cart';
 import { useComparison } from '@/hooks/use-comparison';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Import useEffect
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -22,9 +22,17 @@ export default function Header() {
   const { cart } = useCart();
   const { comparisonList } = useComparison();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false); // <-- Add mounted state
   const pathname = usePathname();
 
-  const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  // Set mounted state after component mounts
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Calculate counts *after* mount or use 0 before mount to avoid hydration mismatch
+  const totalCartItems = isMounted ? cart.reduce((sum, item) => sum + item.quantity, 0) : 0;
+  const comparisonCount = isMounted ? comparisonList.length : 0;
 
   return (
     <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-50">
@@ -55,9 +63,10 @@ export default function Header() {
            <Link href="/compare" passHref>
             <Button variant="ghost" size="icon" className="relative hover:bg-primary/80">
               <GitCompareArrows className="h-5 w-5" />
-              {comparisonList.length > 0 && (
+              {/* Only render badge content after mount */}
+              {isMounted && comparisonCount > 0 && (
                 <Badge variant="secondary" className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs">
-                  {comparisonList.length}
+                  {comparisonCount}
                 </Badge>
               )}
               <span className="sr-only">Compare Products</span>
@@ -66,7 +75,8 @@ export default function Header() {
           <Link href="/cart" passHref>
             <Button variant="ghost" size="icon" className="relative hover:bg-primary/80">
               <ShoppingCart className="h-5 w-5" />
-              {totalCartItems > 0 && (
+               {/* Only render badge content after mount */}
+              {isMounted && totalCartItems > 0 && (
                 <Badge variant="secondary" className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs">
                   {totalCartItems}
                 </Badge>
@@ -103,13 +113,15 @@ export default function Header() {
                         variant={pathname === link.href ? 'secondary': 'ghost'}
                         className="justify-start w-full"
                       >
-                         {link.label === 'Compare' && comparisonList.length > 0 && <GitCompareArrows className="mr-2 h-4 w-4" />}
-                         {link.label === 'Cart' && totalCartItems > 0 && <ShoppingCart className="mr-2 h-4 w-4" />}
+                         {link.label === 'Compare' && isMounted && comparisonCount > 0 && <GitCompareArrows className="mr-2 h-4 w-4" />}
+                         {link.label === 'Cart' && isMounted && totalCartItems > 0 && <ShoppingCart className="mr-2 h-4 w-4" />}
                          {link.label}
-                         {link.label === 'Compare' && comparisonList.length > 0 && (
-                            <Badge variant="outline" className="ml-auto">{comparisonList.length}</Badge>
+                         {/* Only render badge content after mount */}
+                         {link.label === 'Compare' && isMounted && comparisonCount > 0 && (
+                            <Badge variant="outline" className="ml-auto">{comparisonCount}</Badge>
                          )}
-                         {link.label === 'Cart' && totalCartItems > 0 && (
+                         {/* Only render badge content after mount */}
+                         {link.label === 'Cart' && isMounted && totalCartItems > 0 && (
                              <Badge variant="outline" className="ml-auto">{totalCartItems}</Badge>
                          )}
                       </Button>
