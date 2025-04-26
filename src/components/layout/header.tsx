@@ -11,12 +11,20 @@ import { useState, useEffect } from 'react'; // Import useEffect
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-const navLinks = [
+// Desktop nav links (excluding Cart and Compare, which are icons)
+const desktopNavLinks = [
   { href: '/', label: 'Home' },
   { href: '/products', label: 'Products' },
-  { href: '/compare', label: 'Compare' },
-  { href: '/cart', label: 'Cart' },
 ];
+
+// Mobile nav links (including Cart and Compare)
+const mobileNavLinks = [
+    { href: '/', label: 'Home' },
+    { href: '/products', label: 'Products' },
+    { href: '/compare', label: 'Compare' },
+    { href: '/cart', label: 'Cart' },
+];
+
 
 export default function Header() {
   const { cart } = useCart();
@@ -41,9 +49,9 @@ export default function Header() {
           Tech Emporium
         </Link>
 
-        {/* Desktop Navigation */}
+        {/* Desktop Navigation - Now uses desktopNavLinks */}
         <nav className="hidden md:flex items-center space-x-4">
-          {navLinks.map((link) => (
+          {desktopNavLinks.map((link) => (
             <Link key={link.href} href={link.href} passHref>
               <Button
                 variant="ghost"
@@ -58,14 +66,14 @@ export default function Header() {
            ))}
         </nav>
 
-        {/* Icons */}
+        {/* Icons - Remain unchanged */}
         <div className="hidden md:flex items-center space-x-4">
            <Link href="/compare" passHref>
             <Button variant="ghost" size="icon" className="relative hover:bg-primary/80">
               <GitCompareArrows className="h-5 w-5" />
               {/* Only render badge content after mount */}
               {isMounted && comparisonCount > 0 && (
-                <Badge variant="secondary" className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs">
+                <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs">
                   {comparisonCount}
                 </Badge>
               )}
@@ -77,7 +85,7 @@ export default function Header() {
               <ShoppingCart className="h-5 w-5" />
                {/* Only render badge content after mount */}
               {isMounted && totalCartItems > 0 && (
-                <Badge variant="secondary" className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs">
+                <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs">
                   {totalCartItems}
                 </Badge>
               )}
@@ -105,8 +113,9 @@ export default function Header() {
                    </Button>
                  </SheetClose>
               </div>
+               {/* Mobile Navigation - Uses mobileNavLinks */}
               <nav className="flex flex-col space-y-3">
-                {navLinks.map((link) => (
+                {mobileNavLinks.map((link) => (
                   <SheetClose key={link.href} asChild>
                     <Link href={link.href} passHref>
                       <Button
