@@ -1,19 +1,26 @@
+
 'use client';
 
+import { useState } from 'react';
 import { useCart } from '@/hooks/use-cart';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // Import useRouter
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trash2, ShoppingBag } from 'lucide-react';
+import { Trash2, ShoppingBag, Loader2, CheckCircle } from 'lucide-react'; // Add Loader2 and CheckCircle
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Import Alert components
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, clearCart, cartTotal, itemCount } = useCart();
   const { toast } = useToast();
+  const router = useRouter(); // Initialize router
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false); // Track checkout success state
 
   const handleQuantityChange = (productId: string, newQuantity: number, stock: number) => {
      if (newQuantity > stock) {
@@ -26,7 +33,6 @@ export default function CartPage() {
      } else {
         updateQuantity(productId, newQuantity);
      }
-
   };
 
   const handleClearCart = () => {
@@ -35,6 +41,7 @@ export default function CartPage() {
         title: "Cart Cleared",
         description: "Your shopping cart has been emptied.",
       });
+     setCheckoutSuccess(false); // Reset success state if cart is cleared manually
   }
 
   const handleRemoveItem = (productId: string, productName: string) => {
@@ -43,15 +50,65 @@ export default function CartPage() {
         title: "Item Removed",
         description: `${productName} has been removed from your cart.`,
       });
+      setCheckoutSuccess(false); // Reset success state on item removal
   }
 
-  const handleCheckout = () => {
-      // Placeholder for checkout logic
+  const handleCheckout = async () => {
+      setIsCheckingOut(true);
+      setCheckoutSuccess(false); // Reset success state before starting
       toast({
-          title: "Checkout Initiated",
-          description: "Redirecting to checkout... (Not Implemented)",
+          title: "Processing Checkout",
+          description: "Please wait while we simulate your order placement...",
       });
-      // In a real app, you'd redirect to a checkout page or integrate a payment gateway
+
+      // Simulate API call or processing delay
+      await new Promise(resolve => setTimeout(resolve, 2500)); // Simulate 2.5 seconds delay
+
+      try {
+          // Simulate successful checkout
+          clearCart();
+          setCheckoutSuccess(true); // Set success state
+          toast({
+              title: "Checkout Successful!",
+              description: "Your order has been confirmed. Thank you for shopping!",
+              variant: "default", // Use default variant for success
+          });
+          // Optional: Redirect after a short delay
+          // setTimeout(() => {
+          //   router.push('/'); // Redirect to home page
+          // }, 1500);
+
+      } catch (error) {
+           // Simulate error during checkout (optional)
+           console.error("Checkout simulation failed:", error);
+            toast({
+                title: "Checkout Failed",
+                description: "Something went wrong during checkout. Please try again.",
+                variant: "destructive",
+            });
+             setCheckoutSuccess(false);
+      } finally {
+         setIsCheckingOut(false);
+      }
+  }
+
+  // Show success message if checkout was successful and cart is now empty
+  if (checkoutSuccess && itemCount === 0) {
+      return (
+          <div className="space-y-8 flex flex-col items-center text-center">
+             <h1 className="text-3xl font-bold text-primary">Checkout Complete</h1>
+                <Alert variant="default" className="max-w-md bg-green-100 border-green-300 dark:bg-green-900/30 dark:border-green-700">
+                    <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <AlertTitle className="text-green-800 dark:text-green-200">Order Confirmed!</AlertTitle>
+                    <AlertDescription className="text-green-700 dark:text-green-300">
+                        Thank you for your purchase. Your order has been successfully placed.
+                    </AlertDescription>
+                </Alert>
+                 <Link href="/products" passHref>
+                    <Button variant="outline">Continue Shopping</Button>
+                 </Link>
+            </div>
+       );
   }
 
   return (
@@ -75,7 +132,7 @@ export default function CartPage() {
              <Card>
                 <CardHeader className="flex flex-row justify-between items-center">
                     <CardTitle>Cart Items ({itemCount})</CardTitle>
-                     <Button variant="outline" size="sm" onClick={handleClearCart}>
+                     <Button variant="outline" size="sm" onClick={handleClearCart} disabled={isCheckingOut}>
                         <Trash2 className="mr-2 h-4 w-4" /> Clear Cart
                      </Button>
                 </CardHeader>
@@ -122,6 +179,7 @@ export default function CartPage() {
                                 onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 1, item.stock)}
                                 className="w-16 h-8 text-center"
                                 aria-label={`Quantity for ${item.name}`}
+                                disabled={isCheckingOut}
                                 />
                             </TableCell>
                             <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
@@ -134,6 +192,7 @@ export default function CartPage() {
                                     className="text-muted-foreground hover:text-destructive"
                                     aria-label={`Remove ${item.name}`}
                                     title={`Remove ${item.name}`}
+                                    disabled={isCheckingOut}
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -172,8 +231,19 @@ export default function CartPage() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                     <Button size="lg" className="w-full" onClick={handleCheckout}>
-                        Proceed to Checkout
+                     <Button
+                        size="lg"
+                        className="w-full"
+                        onClick={handleCheckout}
+                        disabled={isCheckingOut || itemCount === 0} // Disable if checking out or cart empty
+                      >
+                        {isCheckingOut ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...
+                            </>
+                        ) : (
+                            'Proceed to Checkout'
+                        )}
                      </Button>
                 </CardFooter>
              </Card>
