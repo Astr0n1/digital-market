@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
@@ -95,7 +95,9 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
        const newCategories = isChecked
           ? [...prev.categories, category]
           : prev.categories.filter(c => c !== category);
-        return { ...prev, categories: newCategories };
+        const newState = { ...prev, categories: newCategories };
+        stableOnFilterChange(newState); // Apply filter immediately
+        return newState;
      });
   }, []);
 
@@ -106,7 +108,9 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
         const newBrands = isChecked
            ? [...prev.brands, brand]
            : prev.brands.filter(b => b !== brand);
-         return { ...prev, brands: newBrands };
+        const newState = { ...prev, brands: newBrands };
+        stableOnFilterChange(newState); // Apply filter immediately
+         return newState;
      });
   }, []);
 
@@ -127,7 +131,11 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
     // Debounce price range updates before applying filters
    useEffect(() => {
      const handler = setTimeout(() => {
-       setCurrentFilters(prev => ({ ...prev, priceRange: internalPriceRange }));
+       setCurrentFilters(prev => {
+           const newState = { ...prev, priceRange: internalPriceRange };
+           stableOnFilterChange(newState); // Apply filter after debounce
+           return newState;
+        });
      }, DEBOUNCE_DELAY);
 
      return () => {
@@ -140,14 +148,14 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
    const stableOnFilterChange = useCallback(onFilterChange, [onFilterChange]);
    const previousFiltersRef = useRef<Filters>();
 
-    // Call onFilterChange ONLY when currentFilters actually change
-    useEffect(() => {
-        if (previousFiltersRef.current && areFiltersEqual(previousFiltersRef.current, currentFilters)) {
-            return; // Filters haven't changed, do nothing
-        }
-        stableOnFilterChange(currentFilters);
-        previousFiltersRef.current = currentFilters; // Store the current filters for the next comparison
-    }, [currentFilters, stableOnFilterChange]);
+    // Call onFilterChange ONLY when currentFilters actually change (Removed as filters are applied immediately or after debounce)
+    // useEffect(() => {
+    //     if (previousFiltersRef.current && areFiltersEqual(previousFiltersRef.current, currentFilters)) {
+    //         return; // Filters haven't changed, do nothing
+    //     }
+    //     stableOnFilterChange(currentFilters);
+    //     previousFiltersRef.current = currentFilters; // Store the current filters for the next comparison
+    // }, [currentFilters, stableOnFilterChange]);
 
 
    // Reset filters function
@@ -159,8 +167,8 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
       };
        setCurrentFilters(defaultFilters);
        setInternalPriceRange(defaultFilters.priceRange);
-      // stableOnFilterChange(defaultFilters); // Let the useEffect handle the update
-   }, [maxPrice]);
+       stableOnFilterChange(defaultFilters); // Apply reset immediately
+   }, [maxPrice, stableOnFilterChange]);
 
 
    if (loading) {
