@@ -20,7 +20,11 @@ export function useFetchData<T>(
   });
 
   const fetchData = useCallback(async (...args: any[]) => {
-    setState((prevState) => ({ ...prevState, loading: true, error: null }));
+    // Only set loading if not already loading
+    setState((prevState) => {
+        if (prevState.loading) return prevState;
+        return { ...prevState, loading: true, error: null };
+    });
     try {
       const result = await fetchFunction(...args);
       setState({ data: result, loading: false, error: null });
@@ -28,14 +32,14 @@ export function useFetchData<T>(
       console.error("Error fetching data:", err);
       setState({ data: null, loading: false, error: err instanceof Error ? err : new Error('An unknown error occurred') });
     }
-  }, [fetchFunction]);
+  }, [fetchFunction]); // Dependency: fetchFunction itself
 
   useEffect(() => {
     if (fetchImmediately) {
       fetchData(...initialArgs);
     }
      // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchData, fetchImmediately, JSON.stringify(initialArgs)]); // Re-fetch if initial args change
+  }, [fetchData, fetchImmediately, initialArgs]); // Re-fetch if function, immediate flag, or args reference changes
 
 
   return { ...state, refetch: fetchData };

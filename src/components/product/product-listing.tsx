@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import ProductCard, { ProductCardSkeleton } from '@/components/product/product-card';
 import ProductFilters, { Filters, ProductFiltersSkeleton } from '@/components/product/product-filters';
 import ProductSorter, { SortOption } from '@/components/product/product-sorter';
@@ -9,24 +9,33 @@ import { useFetchData } from '@/hooks/use-fetch-data';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ServerCrash } from 'lucide-react';
 
+const DEFAULT_MAX_PRICE = 5000; // Set a default max price
+
 export default function ProductListing() {
-  const { data: products, loading, error, refetch } = useFetchData<Product[]>(getProducts, [], true);
-  const [filters, setFilters] = useState<Filters>({ categories: [], brands: [], priceRange: [0, 5000] }); // Default max price
+  const { data: products, loading: productsLoading, error, refetch } = useFetchData<Product[]>(getProducts, [], true);
+  const [filters, setFilters] = useState<Filters>({ categories: [], brands: [], priceRange: [0, DEFAULT_MAX_PRICE] });
   const [sortOption, setSortOption] = useState<SortOption>('default');
+  const [maxPrice, setMaxPrice] = useState<number>(DEFAULT_MAX_PRICE);
+  const [isInitialLoad, setIsInitialLoad] = useState(true); // Track initial load
 
-   const maxPrice = useMemo(() => {
-    if (!products || products.length === 0) return 5000; // Default max if no products
-    return Math.max(...products.map(p => p.price), 0);
-  }, [products]);
-
-   // Update initial filter price range when products load
-   useState(() => {
-     if (!loading && products) {
-        setFilters(f => ({ ...f, priceRange: [f.priceRange[0], maxPrice] }));
+  // Calculate max price only once when products are loaded
+   useEffect(() => {
+     if (products && products.length > 0) {
+       const calculatedMax = Math.max(...products.map(p => p.price), DEFAULT_MAX_PRICE);
+       setMaxPrice(calculatedMax);
+       // Set initial filter price range *after* maxPrice is calculated
+       setFilters(f => ({ ...f, priceRange: [f.priceRange[0] === 0 ? 0 : f.priceRange[0], calculatedMax] }));
+       setIsInitialLoad(false); // Mark initial load complete
+     } else if (!productsLoading) {
+         // If no products or error, keep default max price
+         setMaxPrice(DEFAULT_MAX_PRICE);
+         setFilters(f => ({ ...f, priceRange: [f.priceRange[0], DEFAULT_MAX_PRICE] }));
+         setIsInitialLoad(false); // Mark initial load complete even if no products
      }
-   });
+   }, [products, productsLoading]);
 
 
+   // Memoize filter change handler to avoid unnecessary re-renders in child
   const handleFilterChange = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
   }, []);
@@ -37,7 +46,8 @@ export default function ProductListing() {
 
 
   const filteredAndSortedProducts = useMemo(() => {
-    if (!products) return [];
+     // Wait for initial load and products before filtering
+    if (isInitialLoad || !products) return [];
 
     let filtered = products.filter(product => {
       const categoryMatch = filters.categories.length === 0 || filters.categories.includes(product.category);
@@ -66,18 +76,23 @@ export default function ProductListing() {
     }
 
     return filtered;
-  }, [products, filters, sortOption]);
+  }, [products, filters, sortOption, isInitialLoad]); // Depend on isInitialLoad
+
+   // Determine loading state more accurately
+  const isLoading = productsLoading || isInitialLoad;
+
 
   return (
      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8">
         {/* Filters Sidebar */}
         <aside className="md:sticky md:top-20 h-fit">
-             {loading && !products ? (
+             {isLoading ? (
                 <ProductFiltersSkeleton />
               ) : (
                  <ProductFilters
+                    key={maxPrice} // Re-mount if maxPrice changes drastically (unlikely but safe)
                     onFilterChange={handleFilterChange}
-                    initialFilters={filters}
+                    initialFilters={filters} // Pass current filters
                     maxPrice={maxPrice}
                  />
               )}
@@ -100,7 +115,7 @@ export default function ProductListing() {
              )}
 
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                 {loading ? (
+                 {isLoading ? (
                     Array.from({ length: 6 }).map((_, index) => <ProductCardSkeleton key={index} />)
                  ) : filteredAndSortedProducts.length > 0 ? (
                     filteredAndSortedProducts.map(product => (

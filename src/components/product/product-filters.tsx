@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
@@ -26,15 +26,28 @@ interface ProductFiltersProps {
 
 const DEBOUNCE_DELAY = 300; // milliseconds for price slider debounce
 
+// Helper to compare filter objects
+const areFiltersEqual = (filtersA: Filters, filtersB: Filters): boolean => {
+  return (
+    JSON.stringify(filtersA.categories.sort()) === JSON.stringify(filtersB.categories.sort()) &&
+    JSON.stringify(filtersA.brands.sort()) === JSON.stringify(filtersB.brands.sort()) &&
+    filtersA.priceRange[0] === filtersB.priceRange[0] &&
+    filtersA.priceRange[1] === filtersB.priceRange[1]
+  );
+};
+
+
 export default function ProductFilters({ onFilterChange, initialFilters, maxPrice = 1000 }: ProductFiltersProps) {
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentFilters, setCurrentFilters] = useState<Filters>(() => ({
+    categories: initialFilters?.categories ?? [],
+    brands: initialFilters?.brands ?? [],
+    priceRange: initialFilters?.priceRange ?? [0, maxPrice],
+   }));
 
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(initialFilters?.categories ?? []);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>(initialFilters?.brands ?? []);
-  const [priceRange, setPriceRange] = useState<[number, number]>(initialFilters?.priceRange ?? [0, maxPrice]);
-  const [debouncedPriceRange, setDebouncedPriceRange] = useState<[number, number]>(priceRange);
+  const [internalPriceRange, setInternalPriceRange] = useState<[number, number]>(currentFilters.priceRange);
 
 
    // Fetch categories and brands on mount
@@ -45,6 +58,13 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
         const [cats, brds] = await Promise.all([getCategories(), getBrands()]);
         setAvailableCategories(cats);
         setAvailableBrands(brds);
+         // Set initial price range correctly after fetching maxPrice (if applicable, though passed as prop now)
+         // Or if initialFilters are provided later
+         setCurrentFilters(prev => ({
+            ...prev,
+            priceRange: initialFilters?.priceRange ?? [0, maxPrice]
+         }));
+         setInternalPriceRange(initialFilters?.priceRange ?? [0, maxPrice]);
       } catch (error) {
         console.error("Failed to fetch filter options:", error);
          // Handle error appropriately, maybe show a toast
@@ -53,65 +73,94 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
       }
     };
     fetchData();
-  }, []);
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
-   // Update initial price range max value when maxPrice prop changes
-  useEffect(() => {
-    setPriceRange(prev => [prev[0], initialFilters?.priceRange?.[1] ?? maxPrice]);
-    setDebouncedPriceRange(prev => [prev[0], initialFilters?.priceRange?.[1] ?? maxPrice]);
-  }, [maxPrice, initialFilters?.priceRange]);
+    // Update internal state if initialFilters or maxPrice prop changes externally
+   useEffect(() => {
+        const newFilters = {
+            categories: initialFilters?.categories ?? [],
+            brands: initialFilters?.brands ?? [],
+            priceRange: initialFilters?.priceRange ?? [0, maxPrice],
+        };
+        setCurrentFilters(newFilters);
+        setInternalPriceRange(newFilters.priceRange);
+   }, [initialFilters, maxPrice]);
 
 
    // Handle category selection
-  const handleCategoryChange = (category: string, checked: boolean | string) => {
+  const handleCategoryChange = useCallback((category: string, checked: boolean | string) => {
     const isChecked = !!checked;
-    setSelectedCategories(prev =>
-      isChecked ? [...prev, category] : prev.filter(c => c !== category)
-    );
-  };
+     setCurrentFilters(prev => {
+       const newCategories = isChecked
+          ? [...prev.categories, category]
+          : prev.categories.filter(c => c !== category);
+        return { ...prev, categories: newCategories };
+     });
+  }, []);
 
    // Handle brand selection
-   const handleBrandChange = (brand: string, checked: boolean | string) => {
-    const isChecked = !!checked;
-    setSelectedBrands(prev =>
-      isChecked ? [...prev, brand] : prev.filter(b => b !== brand)
-    );
-  };
+   const handleBrandChange = useCallback((brand: string, checked: boolean | string) => {
+      const isChecked = !!checked;
+     setCurrentFilters(prev => {
+        const newBrands = isChecked
+           ? [...prev.brands, brand]
+           : prev.brands.filter(b => b !== brand);
+         return { ...prev, brands: newBrands };
+     });
+  }, []);
 
-   // Handle price slider changes with debounce
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedPriceRange(priceRange);
-    }, DEBOUNCE_DELAY);
+   // Handle immediate price input changes
+   const handlePriceInputChange = (index: 0 | 1, value: number) => {
+      setInternalPriceRange(prev => {
+         const newRange = [...prev] as [number, number];
+         if (index === 0) {
+            newRange[0] = Math.max(0, Math.min(value, prev[1])); // Ensure min <= max
+         } else {
+            newRange[1] = Math.min(maxPrice, Math.max(value, prev[0])); // Ensure max >= min
+         }
+         return newRange;
+      });
+   };
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [priceRange]);
+
+    // Debounce price range updates before applying filters
+   useEffect(() => {
+     const handler = setTimeout(() => {
+       setCurrentFilters(prev => ({ ...prev, priceRange: internalPriceRange }));
+     }, DEBOUNCE_DELAY);
+
+     return () => {
+       clearTimeout(handler);
+     };
+   }, [internalPriceRange]);
 
 
-   // Call onFilterChange when filters change
-  useEffect(() => {
-    onFilterChange({
-      categories: selectedCategories,
-      brands: selectedBrands,
-      priceRange: debouncedPriceRange,
-    });
-  }, [selectedCategories, selectedBrands, debouncedPriceRange, onFilterChange]);
+    // Memoize onFilterChange to prevent unnecessary re-renders if the parent component provides a stable function
+   const stableOnFilterChange = useCallback(onFilterChange, [onFilterChange]);
+   const previousFiltersRef = useRef<Filters>();
+
+    // Call onFilterChange ONLY when currentFilters actually change
+    useEffect(() => {
+        if (previousFiltersRef.current && areFiltersEqual(previousFiltersRef.current, currentFilters)) {
+            return; // Filters haven't changed, do nothing
+        }
+        stableOnFilterChange(currentFilters);
+        previousFiltersRef.current = currentFilters; // Store the current filters for the next comparison
+    }, [currentFilters, stableOnFilterChange]);
+
 
    // Reset filters function
-   const resetFilters = () => {
-      setSelectedCategories([]);
-      setSelectedBrands([]);
-      setPriceRange([0, maxPrice]);
-      setDebouncedPriceRange([0, maxPrice]);
-      // Explicitly trigger update after reset
-       onFilterChange({
+   const resetFilters = useCallback(() => {
+      const defaultFilters: Filters = {
         categories: [],
         brands: [],
         priceRange: [0, maxPrice],
-       });
-   };
+      };
+       setCurrentFilters(defaultFilters);
+       setInternalPriceRange(defaultFilters.priceRange);
+      // stableOnFilterChange(defaultFilters); // Let the useEffect handle the update
+   }, [maxPrice]);
 
 
    if (loading) {
@@ -135,10 +184,11 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
                 <div key={category} className="flex items-center space-x-2">
                   <Checkbox
                     id={`category-${category}`}
-                    checked={selectedCategories.includes(category)}
+                    checked={currentFilters.categories.includes(category)}
                     onCheckedChange={(checked) => handleCategoryChange(category, checked)}
+                    aria-labelledby={`category-label-${category}`}
                   />
-                  <Label htmlFor={`category-${category}`} className="font-normal cursor-pointer">
+                   <Label htmlFor={`category-${category}`} id={`category-label-${category}`} className="font-normal cursor-pointer">
                     {category}
                   </Label>
                 </div>
@@ -154,10 +204,11 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
                 <div key={brand} className="flex items-center space-x-2">
                   <Checkbox
                     id={`brand-${brand}`}
-                    checked={selectedBrands.includes(brand)}
+                    checked={currentFilters.brands.includes(brand)}
                     onCheckedChange={(checked) => handleBrandChange(brand, checked)}
+                     aria-labelledby={`brand-label-${brand}`}
                   />
-                  <Label htmlFor={`brand-${brand}`} className="font-normal cursor-pointer">
+                   <Label htmlFor={`brand-${brand}`} id={`brand-label-${brand}`} className="font-normal cursor-pointer">
                     {brand}
                   </Label>
                 </div>
@@ -173,29 +224,30 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
               min={0}
               max={maxPrice}
               step={10}
-              value={priceRange}
-              onValueChange={setPriceRange} // Update instantly for visual feedback
+               value={internalPriceRange} // Bind to internal state for responsiveness
+               onValueChange={setInternalPriceRange} // Update internal state directly
               className="mb-3"
               minStepsBetweenThumbs={1}
+               aria-label="Price range slider"
             />
             <div className="flex justify-between items-center text-sm text-muted-foreground">
                <Input
                     type="number"
-                    value={priceRange[0]}
-                    onChange={(e) => setPriceRange(prev => [Math.max(0, Number(e.target.value)), prev[1]])}
+                     value={internalPriceRange[0]}
+                     onChange={(e) => handlePriceInputChange(0, Number(e.target.value))}
                     className="w-20 h-8 text-xs"
                     aria-label="Minimum price"
                      min={0}
-                     max={priceRange[1]}
+                     max={internalPriceRange[1]}
                />
                 <span>-</span>
                <Input
                     type="number"
-                    value={priceRange[1]}
-                    onChange={(e) => setPriceRange(prev => [prev[0], Math.min(maxPrice, Number(e.target.value))])}
+                     value={internalPriceRange[1]}
+                    onChange={(e) => handlePriceInputChange(1, Number(e.target.value))}
                     className="w-20 h-8 text-xs"
                     aria-label="Maximum price"
-                    min={priceRange[0]}
+                    min={internalPriceRange[0]}
                     max={maxPrice}
                 />
             </div>
