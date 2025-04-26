@@ -11,6 +11,7 @@ import TechnicalSpecifications from '@/components/product/technical-specificatio
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import StarRating from '@/components/ui/star-rating';
+import { useMemo } from 'react'; // Import useMemo
 
 export default function ComparePage() {
   const { comparisonList, removeFromComparison, clearComparison } = useComparison();
