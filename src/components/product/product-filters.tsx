@@ -1,3 +1,7 @@
+/**
+ * @fileOverview Product Filters Component
+ * Allows users to filter products by category, brand, and price range.
+ */
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -12,6 +16,9 @@ import { X } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
+/**
+ * Defines the structure for filter criteria.
+ */
 export interface Filters {
   categories: string[];
   brands: string[];
@@ -19,22 +26,15 @@ export interface Filters {
 }
 
 interface ProductFiltersProps {
+  /** Callback function invoked when filter values change. */
   onFilterChange: (filters: Filters) => void;
+  /** Optional initial filter values. */
   initialFilters?: Partial<Filters>;
-  maxPrice: number; // Max possible price from all products
+  /** The maximum possible price among all products, used for the slider range. */
+  maxPrice: number;
 }
 
 const DEBOUNCE_DELAY = 300; // milliseconds for price slider debounce
-
-// Helper to compare filter objects
-const areFiltersEqual = (filtersA: Filters, filtersB: Filters): boolean => {
-  return (
-    JSON.stringify(filtersA.categories.sort()) === JSON.stringify(filtersB.categories.sort()) &&
-    JSON.stringify(filtersA.brands.sort()) === JSON.stringify(filtersB.brands.sort()) &&
-    filtersA.priceRange[0] === filtersB.priceRange[0] &&
-    filtersA.priceRange[1] === filtersB.priceRange[1]
-  );
-};
 
 
 export default function ProductFilters({ onFilterChange, initialFilters, maxPrice = 1000 }: ProductFiltersProps) {
@@ -47,8 +47,8 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
     priceRange: initialFilters?.priceRange ?? [0, maxPrice],
    }));
 
+  // Internal state for the price range slider/inputs to provide responsiveness before debouncing
   const [internalPriceRange, setInternalPriceRange] = useState<[number, number]>(currentFilters.priceRange);
-
 
    // Fetch categories and brands on mount
   useEffect(() => {
@@ -58,16 +58,18 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
         const [cats, brds] = await Promise.all([getCategories(), getBrands()]);
         setAvailableCategories(cats);
         setAvailableBrands(brds);
-         // Set initial price range correctly after fetching maxPrice (if applicable, though passed as prop now)
-         // Or if initialFilters are provided later
-         setCurrentFilters(prev => ({
-            ...prev,
-            priceRange: initialFilters?.priceRange ?? [0, maxPrice]
-         }));
-         setInternalPriceRange(initialFilters?.priceRange ?? [0, maxPrice]);
+         // Initialize filter state based on fetched data and props
+         const effectiveMaxPrice = maxPrice > 0 ? maxPrice : 1000; // Use default if maxPrice isn't valid
+         const initialPriceRange: [number, number] = initialFilters?.priceRange ?? [0, effectiveMaxPrice];
+         setCurrentFilters({
+            categories: initialFilters?.categories ?? [],
+            brands: initialFilters?.brands ?? [],
+            priceRange: initialPriceRange
+         });
+         setInternalPriceRange(initialPriceRange);
       } catch (error) {
         console.error("Failed to fetch filter options:", error);
-         // Handle error appropriately, maybe show a toast
+         // TODO: Show error toast to user
       } finally {
         setLoading(false);
       }
@@ -78,14 +80,22 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
 
     // Update internal state if initialFilters or maxPrice prop changes externally
    useEffect(() => {
+        const effectiveMaxPrice = maxPrice > 0 ? maxPrice : 1000; // Use default if maxPrice isn't valid
         const newFilters = {
             categories: initialFilters?.categories ?? [],
             brands: initialFilters?.brands ?? [],
-            priceRange: initialFilters?.priceRange ?? [0, maxPrice],
+            priceRange: initialFilters?.priceRange ?? [0, effectiveMaxPrice],
         };
-        setCurrentFilters(newFilters);
-        setInternalPriceRange(newFilters.priceRange);
-   }, [initialFilters, maxPrice]);
+        // Only update if the incoming props actually differ from current state
+        if (JSON.stringify(newFilters) !== JSON.stringify(currentFilters)) {
+            setCurrentFilters(newFilters);
+            setInternalPriceRange(newFilters.priceRange);
+        }
+   }, [initialFilters, maxPrice, currentFilters]); // Add currentFilters to dependency
+
+
+   // Memoize onFilterChange to prevent unnecessary re-renders if the parent component provides a stable function
+   const stableOnFilterChange = useCallback(onFilterChange, [onFilterChange]);
 
 
    // Handle category selection
@@ -96,10 +106,11 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
           ? [...prev.categories, category]
           : prev.categories.filter(c => c !== category);
         const newState = { ...prev, categories: newCategories };
-        stableOnFilterChange(newState); // Apply filter immediately
+        // Use microtask to ensure parent state update happens after current render cycle
+        queueMicrotask(() => stableOnFilterChange(newState));
         return newState;
      });
-  }, []);
+  }, [stableOnFilterChange]);
 
    // Handle brand selection
    const handleBrandChange = useCallback((brand: string, checked: boolean | string) => {
@@ -109,65 +120,69 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
            ? [...prev.brands, brand]
            : prev.brands.filter(b => b !== brand);
         const newState = { ...prev, brands: newBrands };
-        stableOnFilterChange(newState); // Apply filter immediately
+        // Use microtask to ensure parent state update happens after current render cycle
+        queueMicrotask(() => stableOnFilterChange(newState));
          return newState;
      });
-  }, []);
+  }, [stableOnFilterChange]);
 
    // Handle immediate price input changes
    const handlePriceInputChange = (index: 0 | 1, value: number) => {
+      // Basic validation: ensure value is a number and non-negative
+     const numericValue = Number(value);
+      if (isNaN(numericValue) || numericValue < 0) {
+          return; // Or provide feedback to the user
+      }
+
       setInternalPriceRange(prev => {
          const newRange = [...prev] as [number, number];
+          const effectiveMaxPrice = maxPrice > 0 ? maxPrice : Infinity;
+
          if (index === 0) {
-            newRange[0] = Math.max(0, Math.min(value, prev[1])); // Ensure min <= max
+            // Min price: Clamp between 0 and current max price (or overall max if lower)
+            newRange[0] = Math.max(0, Math.min(numericValue, prev[1]));
          } else {
-            newRange[1] = Math.min(maxPrice, Math.max(value, prev[0])); // Ensure max >= min
+            // Max price: Clamp between current min price and overall max price
+            newRange[1] = Math.min(effectiveMaxPrice, Math.max(numericValue, prev[0]));
          }
          return newRange;
       });
    };
 
 
-    // Debounce price range updates before applying filters
+    // Debounce price range updates from slider/input before applying filters
    useEffect(() => {
      const handler = setTimeout(() => {
        setCurrentFilters(prev => {
-           const newState = { ...prev, priceRange: internalPriceRange };
-           stableOnFilterChange(newState); // Apply filter after debounce
-           return newState;
+            // Only update if internalPriceRange actually changed from the current priceRange filter
+            if (prev.priceRange[0] !== internalPriceRange[0] || prev.priceRange[1] !== internalPriceRange[1]) {
+                const newState = { ...prev, priceRange: internalPriceRange };
+                // Use microtask for the debounced update as well
+                queueMicrotask(() => stableOnFilterChange(newState));
+                return newState;
+            }
+            return prev; // No change needed
         });
      }, DEBOUNCE_DELAY);
 
      return () => {
        clearTimeout(handler);
      };
-   }, [internalPriceRange]);
-
-
-    // Memoize onFilterChange to prevent unnecessary re-renders if the parent component provides a stable function
-   const stableOnFilterChange = useCallback(onFilterChange, [onFilterChange]);
-   const previousFiltersRef = useRef<Filters>();
-
-    // Call onFilterChange ONLY when currentFilters actually change (Removed as filters are applied immediately or after debounce)
-    // useEffect(() => {
-    //     if (previousFiltersRef.current && areFiltersEqual(previousFiltersRef.current, currentFilters)) {
-    //         return; // Filters haven't changed, do nothing
-    //     }
-    //     stableOnFilterChange(currentFilters);
-    //     previousFiltersRef.current = currentFilters; // Store the current filters for the next comparison
-    // }, [currentFilters, stableOnFilterChange]);
+   }, [internalPriceRange, stableOnFilterChange]);
 
 
    // Reset filters function
    const resetFilters = useCallback(() => {
+       const effectiveMaxPrice = maxPrice > 0 ? maxPrice : 1000;
       const defaultFilters: Filters = {
         categories: [],
         brands: [],
-        priceRange: [0, maxPrice],
+        priceRange: [0, effectiveMaxPrice],
       };
        setCurrentFilters(defaultFilters);
        setInternalPriceRange(defaultFilters.priceRange);
-       stableOnFilterChange(defaultFilters); // Apply reset immediately
+       // Use microtask for reset as well
+       queueMicrotask(() => stableOnFilterChange(defaultFilters));
    }, [maxPrice, stableOnFilterChange]);
 
 
@@ -188,19 +203,23 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
           <div>
             <Label className="text-base font-medium mb-3 block">Category</Label>
             <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-              {availableCategories.map(category => (
-                <div key={category} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`category-${category}`}
-                    checked={currentFilters.categories.includes(category)}
-                    onCheckedChange={(checked) => handleCategoryChange(category, checked)}
-                    aria-labelledby={`category-label-${category}`}
-                  />
-                   <Label htmlFor={`category-${category}`} id={`category-label-${category}`} className="font-normal cursor-pointer">
-                    {category}
-                  </Label>
-                </div>
-              ))}
+              {availableCategories.length > 0 ? (
+                  availableCategories.map(category => (
+                    <div key={category} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`category-${category}`}
+                        checked={currentFilters.categories.includes(category)}
+                        onCheckedChange={(checked) => handleCategoryChange(category, checked)}
+                        aria-labelledby={`category-label-${category}`}
+                      />
+                       <Label htmlFor={`category-${category}`} id={`category-label-${category}`} className="font-normal cursor-pointer">
+                        {category}
+                      </Label>
+                    </div>
+                  ))
+              ) : (
+                  <p className="text-sm text-muted-foreground">No categories available.</p>
+              )}
             </div>
           </div>
 
@@ -208,19 +227,23 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
            <div>
             <Label className="text-base font-medium mb-3 block">Brand</Label>
             <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-              {availableBrands.map(brand => (
-                <div key={brand} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`brand-${brand}`}
-                    checked={currentFilters.brands.includes(brand)}
-                    onCheckedChange={(checked) => handleBrandChange(brand, checked)}
-                     aria-labelledby={`brand-label-${brand}`}
-                  />
-                   <Label htmlFor={`brand-${brand}`} id={`brand-label-${brand}`} className="font-normal cursor-pointer">
-                    {brand}
-                  </Label>
-                </div>
-              ))}
+             {availableBrands.length > 0 ? (
+                 availableBrands.map(brand => (
+                    <div key={brand} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`brand-${brand}`}
+                        checked={currentFilters.brands.includes(brand)}
+                        onCheckedChange={(checked) => handleBrandChange(brand, checked)}
+                         aria-labelledby={`brand-label-${brand}`}
+                      />
+                       <Label htmlFor={`brand-${brand}`} id={`brand-label-${brand}`} className="font-normal cursor-pointer">
+                        {brand}
+                      </Label>
+                    </div>
+                  ))
+              ) : (
+                 <p className="text-sm text-muted-foreground">No brands available.</p>
+              )}
             </div>
           </div>
 
@@ -228,37 +251,45 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
           {/* Price Range Filter */}
           <div>
             <Label className="text-base font-medium mb-4 block">Price Range</Label>
-            <Slider
-              min={0}
-              max={maxPrice}
-              step={10}
-               value={internalPriceRange} // Bind to internal state for responsiveness
-               onValueChange={setInternalPriceRange} // Update internal state directly
-              className="mb-3"
-              minStepsBetweenThumbs={1}
-               aria-label="Price range slider"
-            />
-            <div className="flex justify-between items-center text-sm text-muted-foreground">
-               <Input
-                    type="number"
-                     value={internalPriceRange[0]}
-                     onChange={(e) => handlePriceInputChange(0, Number(e.target.value))}
-                    className="w-20 h-8 text-xs"
-                    aria-label="Minimum price"
-                     min={0}
-                     max={internalPriceRange[1]}
-               />
-                <span>-</span>
-               <Input
-                    type="number"
-                     value={internalPriceRange[1]}
-                    onChange={(e) => handlePriceInputChange(1, Number(e.target.value))}
-                    className="w-20 h-8 text-xs"
-                    aria-label="Maximum price"
-                    min={internalPriceRange[0]}
-                    max={maxPrice}
-                />
-            </div>
+             {maxPrice > 0 ? (
+                 <>
+                     <Slider
+                        min={0}
+                        max={maxPrice}
+                        step={10}
+                        value={internalPriceRange} // Bind to internal state for responsiveness
+                        onValueChange={setInternalPriceRange} // Update internal state directly
+                        className="mb-3"
+                        minStepsBetweenThumbs={1}
+                        aria-label="Price range slider"
+                     />
+                    <div className="flex justify-between items-center text-sm text-muted-foreground">
+                       <Input
+                            type="number"
+                             value={internalPriceRange[0]}
+                             onChange={(e) => handlePriceInputChange(0, Number(e.target.value))}
+                            className="w-20 h-8 text-xs"
+                            aria-label="Minimum price"
+                             min={0}
+                             max={internalPriceRange[1]}
+                             step={10}
+                       />
+                        <span>-</span>
+                       <Input
+                            type="number"
+                             value={internalPriceRange[1]}
+                            onChange={(e) => handlePriceInputChange(1, Number(e.target.value))}
+                            className="w-20 h-8 text-xs"
+                            aria-label="Maximum price"
+                            min={internalPriceRange[0]}
+                            max={maxPrice}
+                            step={10}
+                        />
+                    </div>
+                 </>
+             ) : (
+                 <p className="text-sm text-muted-foreground">Price filter unavailable.</p>
+             )}
           </div>
         </CardContent>
       </Card>
@@ -266,6 +297,9 @@ export default function ProductFilters({ onFilterChange, initialFilters, maxPric
 }
 
 
+/**
+ * Skeleton component displayed while filters are loading.
+ */
 export function ProductFiltersSkeleton() {
   return (
      <Card>
