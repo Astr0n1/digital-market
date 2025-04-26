@@ -19,27 +19,34 @@ export function useFetchData<T>(
     error: null,
   });
 
+  // Memoize initialArgs stringified representation for dependency array
+  const initialArgsString = JSON.stringify(initialArgs);
+
   const fetchData = useCallback(async (...args: any[]) => {
     // Only set loading if not already loading
     setState((prevState) => {
         if (prevState.loading) return prevState;
         return { ...prevState, loading: true, error: null };
     });
+    console.log("useFetchData - fetchData called with args:", args); // Debug log
     try {
       const result = await fetchFunction(...args);
+       console.log("useFetchData - fetch successful, result:", result); // Debug log
       setState({ data: result, loading: false, error: null });
     } catch (err) {
-      console.error("Error fetching data:", err);
+      console.error("useFetchData - Error fetching data:", err);
       setState({ data: null, loading: false, error: err instanceof Error ? err : new Error('An unknown error occurred') });
     }
-  }, [fetchFunction]); // Dependency: fetchFunction itself
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchFunction]); // fetchFunction might change if defined inline, but usually stable if imported
 
   useEffect(() => {
     if (fetchImmediately) {
-      fetchData(...initialArgs);
+      // Parse the stringified args back when calling fetchData
+      fetchData(...JSON.parse(initialArgsString));
     }
      // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchData, fetchImmediately, initialArgs]); // Re-fetch if function, immediate flag, or args reference changes
+  }, [fetchData, fetchImmediately, initialArgsString]); // Use stringified args in dependency array
 
 
   return { ...state, refetch: fetchData };

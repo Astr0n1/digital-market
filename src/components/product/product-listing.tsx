@@ -18,36 +18,61 @@ export default function ProductListing() {
   const [maxPrice, setMaxPrice] = useState<number>(DEFAULT_MAX_PRICE);
   const [isInitialLoad, setIsInitialLoad] = useState(true); // Track initial load
 
+  console.log("ProductListing - Hook state:", { products, productsLoading, error, filters, sortOption, maxPrice, isInitialLoad }); // Debug log
+
   // Calculate max price only once when products are loaded
    useEffect(() => {
+     console.log("ProductListing - Max Price Effect - Start", { products, productsLoading }); // Debug log
      if (products && products.length > 0) {
        const calculatedMax = Math.max(...products.map(p => p.price), DEFAULT_MAX_PRICE);
+       console.log("ProductListing - Max Price Effect - Calculated Max:", calculatedMax); // Debug log
        setMaxPrice(calculatedMax);
        // Set initial filter price range *after* maxPrice is calculated
-       setFilters(f => ({ ...f, priceRange: [f.priceRange[0] === 0 ? 0 : f.priceRange[0], calculatedMax] }));
+       setFilters(f => {
+           const newFilters = { ...f, priceRange: [f.priceRange[0] === 0 ? 0 : f.priceRange[0], calculatedMax] };
+           console.log("ProductListing - Max Price Effect - Setting Filters:", newFilters); // Debug log
+           return newFilters;
+        });
        setIsInitialLoad(false); // Mark initial load complete
-     } else if (!productsLoading) {
-         // If no products or error, keep default max price
+       console.log("ProductListing - Max Price Effect - Initial load complete (with products)"); // Debug log
+     } else if (!productsLoading && !error) { // Only update if not loading and no error, but products array might be empty
+         console.log("ProductListing - Max Price Effect - No products or empty, using default max price"); // Debug log
          setMaxPrice(DEFAULT_MAX_PRICE);
-         setFilters(f => ({ ...f, priceRange: [f.priceRange[0], DEFAULT_MAX_PRICE] }));
+         setFilters(f => {
+             const newFilters = { ...f, priceRange: [f.priceRange[0], DEFAULT_MAX_PRICE] };
+             console.log("ProductListing - Max Price Effect - Setting Filters (default):", newFilters); // Debug log
+             return newFilters;
+            });
          setIsInitialLoad(false); // Mark initial load complete even if no products
+         console.log("ProductListing - Max Price Effect - Initial load complete (no products/empty)"); // Debug log
+     } else if (error) {
+          console.log("ProductListing - Max Price Effect - Error occurred, using default max price"); // Debug log
+          setMaxPrice(DEFAULT_MAX_PRICE);
+          setIsInitialLoad(false);
+          console.log("ProductListing - Max Price Effect - Initial load complete (error)"); // Debug log
      }
-   }, [products, productsLoading]);
+   }, [products, productsLoading, error]);
 
 
    // Memoize filter change handler to avoid unnecessary re-renders in child
   const handleFilterChange = useCallback((newFilters: Filters) => {
+    console.log("ProductListing - handleFilterChange:", newFilters); // Debug log
     setFilters(newFilters);
   }, []);
 
    const handleSortChange = useCallback((newSortOption: SortOption) => {
+    console.log("ProductListing - handleSortChange:", newSortOption); // Debug log
     setSortOption(newSortOption);
   }, []);
 
 
   const filteredAndSortedProducts = useMemo(() => {
+     console.log("ProductListing - Filter/Sort Memo - Start", { isInitialLoad, products }); // Debug log
      // Wait for initial load and products before filtering
-    if (isInitialLoad || !products) return [];
+    if (isInitialLoad || !products) {
+         console.log("ProductListing - Filter/Sort Memo - Bailing: initialLoad or no products"); // Debug log
+        return [];
+    }
 
     let filtered = products.filter(product => {
       const categoryMatch = filters.categories.length === 0 || filters.categories.includes(product.category);
@@ -55,6 +80,8 @@ export default function ProductListing() {
       const priceMatch = product.price >= filters.priceRange[0] && product.price <= filters.priceRange[1];
       return categoryMatch && brandMatch && priceMatch;
     });
+
+    console.log("ProductListing - Filter/Sort Memo - After filtering:", filtered.length); // Debug log
 
     switch (sortOption) {
       case 'price-asc':
@@ -74,12 +101,13 @@ export default function ProductListing() {
         // Keep original order or apply a default sort if needed
         break;
     }
-
+    console.log("ProductListing - Filter/Sort Memo - After sorting:", filtered.length); // Debug log
     return filtered;
   }, [products, filters, sortOption, isInitialLoad]); // Depend on isInitialLoad
 
    // Determine loading state more accurately
   const isLoading = productsLoading || isInitialLoad;
+  console.log("ProductListing - Derived isLoading:", isLoading); // Debug log
 
 
   return (
@@ -87,7 +115,7 @@ export default function ProductListing() {
         {/* Filters Sidebar */}
         <aside className="md:sticky md:top-20 h-fit">
              {isLoading ? (
-                <ProductFiltersSkeleton />
+                 <ProductFiltersSkeleton />
               ) : (
                  <ProductFilters
                     key={maxPrice} // Re-mount if maxPrice changes drastically (unlikely but safe)

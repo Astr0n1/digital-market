@@ -245,12 +245,14 @@ const mockProducts: Product[] = [
  * @returns A promise that resolves to an array of Product objects.
  */
 export async function getProducts(): Promise<Product[]> {
+  console.log("getProducts called"); // Debug log
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 50));
   // In a real app, you would fetch from an API endpoint:
   // const response = await fetch('/api/products');
   // const data = await response.json();
   // return data;
+  console.log("getProducts returning data:", mockProducts); // Debug log
   return [...mockProducts]; // Return a copy to prevent mutation
 }
 
