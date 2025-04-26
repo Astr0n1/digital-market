@@ -28,7 +28,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="light">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning={true} // Add this line to suppress hydration warnings
+      >
         <CartProvider>
           <ComparisonProvider>
             <div className="flex flex-col min-h-screen">
