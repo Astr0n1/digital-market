@@ -1,26 +1,33 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '@/hooks/use-cart';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trash2, ShoppingBag, Loader2, CheckCircle } from 'lucide-react'; // Add Loader2 and CheckCircle
+import { Trash2, ShoppingBag, Loader2, CheckCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Import Alert components
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, clearCart, cartTotal, itemCount } = useCart();
   const { toast } = useToast();
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [checkoutSuccess, setCheckoutSuccess] = useState(false); // Track checkout success state
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false); // Track hydration state
+
+  // Ensure client-side hydration is complete before rendering cart-dependent UI
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   const handleQuantityChange = (productId: string, newQuantity: number, stock: number) => {
      if (newQuantity > stock) {
@@ -90,6 +97,11 @@ export default function CartPage() {
       } finally {
          setIsCheckingOut(false);
       }
+  }
+
+  // Loading/Skeleton state before hydration is complete
+  if (!isHydrated) {
+    return <CartPageSkeleton />;
   }
 
   // Show success message if checkout was successful and cart is now empty
@@ -253,3 +265,76 @@ export default function CartPage() {
     </div>
   );
 }
+
+
+// Skeleton component for CartPage
+function CartPageSkeleton() {
+    return (
+      <div className="space-y-8">
+        <Skeleton className="h-9 w-64" /> {/* Title Skeleton */}
+
+         {/* Simulating the empty cart state initially */}
+         <Card className="text-center py-10">
+             <CardContent className="flex flex-col items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded-full" /> {/* Icon Skeleton */}
+                  <Skeleton className="h-6 w-48" /> {/* Text Skeleton */}
+                  <Skeleton className="h-10 w-36" /> {/* Button Skeleton */}
+             </CardContent>
+         </Card>
+
+         {/* Or skeleton for cart items (less common for initial hydration mismatch) */}
+         {/*
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
+                  <Card>
+                     <CardHeader className="flex flex-row justify-between items-center">
+                         <Skeleton className="h-7 w-40" />
+                         <Skeleton className="h-8 w-28" />
+                     </CardHeader>
+                     <CardContent className="p-0">
+                         <Table>
+                              <TableHeader>
+                                 <TableRow>
+                                     <TableHead className="w-[100px]"><Skeleton className="h-5 w-full" /></TableHead>
+                                     <TableHead><Skeleton className="h-5 w-full" /></TableHead>
+                                     <TableHead className="text-center"><Skeleton className="h-5 w-16 mx-auto" /></TableHead>
+                                     <TableHead className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableHead>
+                                     <TableHead className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableHead>
+                                     <TableHead className="text-right"><Skeleton className="h-5 w-10 ml-auto" /></TableHead>
+                                 </TableRow>
+                             </TableHeader>
+                             <TableBody>
+                                 {[...Array(2)].map((_, i) => ( // Skeleton for 2 rows
+                                     <TableRow key={i}>
+                                         <TableCell><Skeleton className="h-16 w-16 rounded-md" /></TableCell>
+                                         <TableCell><Skeleton className="h-5 w-3/4 mb-1" /><Skeleton className="h-3 w-1/2" /></TableCell>
+                                         <TableCell className="text-center"><Skeleton className="h-8 w-16 mx-auto" /></TableCell>
+                                         <TableCell className="text-right"><Skeleton className="h-5 w-12 ml-auto" /></TableCell>
+                                         <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
+                                         <TableCell className="text-right"><Skeleton className="h-9 w-9 ml-auto rounded-md" /></TableCell>
+                                     </TableRow>
+                                 ))}
+                             </TableBody>
+                         </Table>
+                     </CardContent>
+                  </Card>
+              </div>
+               <div className="lg:col-span-1">
+                  <Card className="sticky top-20">
+                      <CardHeader><Skeleton className="h-7 w-1/2" /></CardHeader>
+                     <CardContent className="space-y-4">
+                         <Skeleton className="h-5 w-full" />
+                         <Skeleton className="h-5 w-full" />
+                         <Skeleton className="h-5 w-full" />
+                         <Skeleton className="h-px w-full bg-muted my-2" />
+                         <Skeleton className="h-7 w-full" />
+                     </CardContent>
+                     <CardFooter><Skeleton className="h-12 w-full" /></CardFooter>
+                  </Card>
+               </div>
+         </div>
+         */}
+      </div>
+    );
+}
+
