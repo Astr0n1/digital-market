@@ -1,8 +1,8 @@
-import ProductListing from '@/components/product/product-listing';
+import ProductListing from "@/components/product/product-listing";
 
 export const metadata = {
-  title: 'Products - Tech Emporium',
-  description: 'Browse our wide selection of electronics.',
+  title: "Products - Tech Empire",
+  description: "Browse our wide selection of electronics.",
 };
 
 export default function ProductsPage() {
