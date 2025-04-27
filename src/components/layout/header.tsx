@@ -43,7 +43,7 @@ export default function Header() {
   const comparisonCount = isMounted ? comparisonList.length : 0;
 
   return (
-    <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-50">
+    <header className="bg-primary text-primary-foreground sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold">
           Tech Emporium
@@ -73,7 +73,7 @@ export default function Header() {
               <GitCompareArrows className="h-5 w-5" />
               {/* Only render badge content after mount */}
               {isMounted && comparisonCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs">
+                <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-secondary text-secondary-foreground">
                   {comparisonCount}
                 </Badge>
               )}
@@ -85,7 +85,7 @@ export default function Header() {
               <ShoppingCart className="h-5 w-5" />
                {/* Only render badge content after mount */}
               {isMounted && totalCartItems > 0 && (
-                <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs">
+                <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs bg-secondary text-secondary-foreground">
                   {totalCartItems}
                 </Badge>
               )}
@@ -110,7 +110,7 @@ export default function Header() {
                    <Button variant="ghost" size="icon">
                       <X className="h-6 w-6" />
                       <span className="sr-only">Close menu</span>
-                   </Button>
+                    </Button>
                  </SheetClose>
               </div>
                {/* Mobile Navigation - Uses mobileNavLinks */}
