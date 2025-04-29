@@ -17,8 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tech Empire",
+  title: "Tech Emporium",
   description: "Your destination for the latest electronics",
+  icons: { icon: "/favicon.png" },
 };
 
 export default function RootLayout({
@@ -41,7 +42,8 @@ export default function RootLayout({
               </main>
               <footer className="bg-primary text-primary-foreground py-4 mt-12">
                 <div className="container mx-auto text-center text-sm">
-                  © {new Date().getFullYear()} Tech Empire. All rights reserved.
+                  © {new Date().getFullYear()} Tech Emporium. All rights
+                  reserved.
                 </div>
               </footer>
             </div>
